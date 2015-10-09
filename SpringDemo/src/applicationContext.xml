@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+     <!--bean路径-->
+     <bean id="user" class="ioc.User">
+	</bean>
+	
+	
+	
+	<!--
+		Spring提供了4种实现AOP的方式： 1.经典的基于代理的AOP 2.@AspectJ注解驱动的切面 3.纯POJO切面
+		4.注入式AspectJ切面
+	-->
+
+	<bean id="beforeAdvice" class="aop.BeforeAdvice"></bean>
+	<bean id="afterAdvice" class="aop.AfterAdvice"></bean>
+	<bean id="compareInterceptor" class="aop.CompareInterceptor"></bean>
+	<bean id="studenttarget" class="aop.StudentImpl"></bean>
+
+	<bean id="student" class="org.springframework.aop.framework.ProxyFactoryBean">
+		<property name="proxyInterfaces">
+			<value>aop.IStudent</value>
+		</property>
+		<property name="interceptorNames">
+			<list>
+				<value>beforeAdvice</value>
+				<value>afterAdvice</value>
+				<value>compareInterceptor</value>
+			</list>
+		</property>
+		<property name="target">
+			<ref bean="studenttarget" />
+		</property>
+
+	</bean>
+	
+</beans>

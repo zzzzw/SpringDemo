@@ -1,0 +1,9 @@
+package aop;
+
+public   class  StudentImpl  implements  IStudent {
+	    
+	          public   void  addStudent(String name) {
+	          System.out.println( " ª∂”≠  " + name + "  ƒ„º”»ÎSpringº“Õ•! " );
+	    } 
+	 } 
+	  

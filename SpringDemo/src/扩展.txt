@@ -1,0 +1,258 @@
+http://blog.csdn.net/kiss_vicente/article/details/6902879
+
+http://www.cnblogs.com/o-andy-o/archive/2012/09/09/2677821.html
+
+spring - ioc和aop
+1.程序中为什么会用到spring的ioc和aop
+
+2.什么是IOC，AOP，以及使用它们的好处，即详细回答了第一个问题
+
+3.原理
+
+ 
+
+关于1：
+
+         a:我们平常使用对象的时候，一般都是直接使用关键字类new一个对象，那这样有什么坏处呢？其实很显然的，使用new那么就表示当前模块已经不知不觉的和 new的对象耦合了，而我们通常都是更高层次的抽象模块调用底层的实现模块，这样也就产生了模块依赖于具体的实现，这样与我们JAVA中提倡的面向接口面向抽象编程是相冲突的，而且这样做也带来系统的模块架构问题。很简单的例子，我们在进行数据库操作的时候，总是业务层调用DAO层，当然我们的DAO一般 都是会采用接口开发，这在一定程度上满足了松耦合，使业务逻辑层不依赖于具体的数据库DAO层。但是我们在使用的时候还是会new一个特定数据库的DAO 层，这无形中也与特定的数据库绑定了，虽然我们可以使用抽象工厂模式来获取DAO实现类，但除非我们一次性把所有数据库的DAO写出来，否则在进行数据库 迁移的时候我们还是得修改DAO工厂类，所以我们就思考新的方法
+
+     
+
+        b：
+
+复制代码
+1 public class Hello implements IHello {
+2 
+3     public void sayHello(String name) {
+4         // TODO Auto-generated method stub
+5         System.out.println("Hello " + name);
+6     }
+7 
+8 }
+复制代码
+ 
+
+        如上图，假设我们要在方法的开始和结束处加上一些业务逻辑,大家想到的最直接的方法，就是在方法前面和后面加上一些代码，如日志，假如不能改变原来的方法了，那你又会想到继承Hello类，重写sayHello方法，如下
+
+复制代码
+public class Hello2 extends Hello {
+    public void sayHello(String name) {
+        // TODO Auto-generated method stub
+        sysstem.out.println("方法前的逻辑");
+        super.sayHello("。。。。。。");
+    }
+
+}
+复制代码
+可能你又会想到，组合的方式
+
+复制代码
+public class Hello3 implements IHello {
+    private IHello helloDao =  new Hello();
+
+    public void sayHello(String name) {
+        // TODO Auto-generated method stub
+        sysstem.out.println("方法前的逻辑");
+        helloDao .sayHello("。。。。。。");
+    }
+
+}
+复制代码
+假设现在要把这个日志功能加入到20个不同方法的前面，可以考虑把那个日志功能抽离出来封装成一个类的方法，但是那样还是要组合新建20个类，组合20次，如下
+
+复制代码
+public class LogInterceptor {
+    public void before() {
+        System.out.println("method before");
+    }
+}
+
+public class Hello3 implements IHello {
+    private IHello helloDao =  new Hello();
+
+    public void sayHello(String name) {
+        // TODO Auto-generated method stub
+       new LogInterceptor().before();
+       helloDao .sayHello("。。。。。。"); 
+  } 
+}
+
+public class hello4 implements 其他接口 {//需要新建类
+    private IHello qitaDao =  new 其他业务类();//需要组合旧的类
+
+    public void doHello(String name) {
+        // TODO Auto-generated method stub
+       new LogInterceptor().before();
+       helloDao .sayHello("。。。。。。"); 
+  } 
+}
+
+。。。20次
+复制代码
+这样肯定不可靠。我们想新的思路，可以写一个配置文件，在每个需要加日志逻辑的里面，例Hello类的所有方法上配上那个日志类的方法，这样就不用新建20个类，组合20次旧的类，但是问题又来了，程序不会返回你重新组合的那个类（即那个新组合而成的动态类），我们需要思考新的方法
+
+ 
+
+ 
+
+关于2:
+
+        IOC:Inversion of Control 控制反转，也叫（Dependency Injection）依赖注入，上述a的逻辑使用IOC，就是DAO接口的实现不再是业务逻辑层调用工厂类去获取，而是通过容器（spring）来自动的为我们的业务层设置DAO的实现类，这样整个过程就反过来，以前是我们业务层主动去获取DAO，而现在是DAO主动被设置到业务逻辑层中来了，这也就是反转控制的由来。通过IOC，我们就可以在不修改任何代码的情况下，无缝的实现数据库的换库迁移
+
+        AOP:Aspect Oriented Programming 面向切面编程，上述b的逻辑就使用AOP,就可以解决，他帮助我们生成动态的代理类，织入新的业务逻辑，如事务，日志等等
+
+ 
+
+关于3：
+
+        IOC原理:
+
+
+复制代码
+public class UserService{
+//private UserDao userDao = new UserDaoImpl();  //让业务层与数据访问层耦合在一起,不利用以后模块的替换.
+private UserDao userDao_IoC = null;
+public void setUserDao(UserDao userDao){
+this.userDao_IoC = userDao
+}
+
+public void save(User user){
+userDao.save(user);
+}
+}
+//原理：反射
+public void ObjectgetInstance(String className) throws Exception {
+            Object obj = Class.forName(className).newInstance();
+            Method[] methods = obj.getClass().getMethods();
+            for (Method method : methods) {
+                if (method.getName().intern() == "setUserDao") {
+                    method.invoke(obj, "换成实现接口类的名称!");
+                 }
+            }
+    }
+复制代码
+        AOP原理：
+
+
+复制代码
+ 1 package com.s2sh.intercepetor;
+ 2 
+ 3 
+ 4 public interface IHello {
+ 5     public void sayHello(String name);
+ 6     
+ 7     public void sayGoogBye(String name);
+ 8 }
+ 9 
+10 
+11 package com.s2sh.intercepetor;
+12 
+13 public class Hello implements IHello {
+14 
+15 
+16     public void sayGoogBye(String name) {
+17         // TODO Auto-generated method stub
+18         System.out.println(name+" GoodBye!");
+19     }
+20 
+21 
+22     public void sayHello(String name) {
+23         // TODO Auto-generated method stub
+24         System.out.println("Hello " + name);
+25     }
+26 
+27 }
+28 
+29 package com.s2sh.intercepetor;
+30 
+31 
+32 public class Logger {
+33     public static void before() {
+34         System.out.println("开始了");
+35     }
+36     
+37     public static void after() {
+38         System.out.println("结束了");
+39     }
+40 }
+41 
+42 
+43 
+44 package com.s2sh.intercepetor;
+45 
+46 import java.lang.reflect.InvocationHandler;
+47 import java.lang.reflect.Method;
+48 import java.lang.reflect.Proxy;
+49 
+50 
+51 public class DynaProxyHello implements InvocationHandler {
+52     private Object delegate;//被代理的对象
+53 
+54     public DynaProxyHello(Object delegate) {
+55         this.delegate = delegate;
+56     }
+57     public Object invoke(Object proxy, Method method, Object[] args)
+58             throws Throwable {
+59         // TODO Auto-generated method stub
+60         Object result = null;
+61         try {
+62             // 执行原来的方法之前记录日志
+63             Logger.before();
+64             // JVM通过这条语句执行原来的方法(反射机制)
+65             result = method.invoke(this.delegate, args);
+66             // 执行原来的方法之后记录日志
+67             Logger.after();
+68         } catch (Exception e) {
+69             e.printStackTrace();
+70         }
+71         // 返回方法返回值给调用者
+72         return result;
+73     }
+74 
+75 
+76 }
+77 
+78 
+79 package com.s2sh.intercepetor;
+80 
+81 import java.lang.reflect.Proxy;
+82 
+83 public class Test {
+84     public static void main(String[] args) {
+85         // ①目标业务类
+86         IHello target = new Hello();
+87         // ② 将目标业务类和横切代码编织到一起
+88         DynaProxyHello handler = new DynaProxyHello(target);
+89         // 创建代理类
+90         IHello proxy = (IHello) Proxy.newProxyInstance(
+                                            target.getClass().getClassLoader(), //返回目标类的类装载器，保持两个类的类装载器一样
+                                            target.getClass().getInterfaces(), //返回目标类实现的接口，保证组合而成的代理类也实现这些接口
+                                            handler//指派谁去处理方法的对象 
+                                            );
+92         // ④ 操作代理实例
+93         proxy.sayHello("张三");
+94         proxy.sayGoogBye("李四");
+95     }
+96 }
+复制代码
+ 
+
+运行结果：
+
+复制代码
+开始了--
+        Hello 张三
+结束了--
+
+开始了--
+        李四 GoodBye!
+结束了--
+复制代码
+ 
+
+ 
+
+       
+
+ 
+
+一步一个脚印，方便自己复习，该出手时就出手，有错误，一定要指正，非常感谢，共同进步！
